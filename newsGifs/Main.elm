@@ -84,7 +84,7 @@ update msg model =
             ( model, Cmd.none )
 
         Headline text ->
-            ( { model | text = text }, getWordFreqs text )
+            ( { model | text = text, keywords = [] }, getWordFreqs text )
 
 
 
