@@ -10,7 +10,7 @@ import Json.Decode as Decode
 main : Program Never Model Msg
 main =
     Html.program
-        { init = init "Germany votes for big social media fines"
+        { init = init ""
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -43,6 +43,7 @@ type Msg
     = MorePlease
     | NewGif (Result Http.Error String)
     | WordFreq (Result Http.Error WordMetadata)
+    | Headline String
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -82,6 +83,9 @@ update msg model =
         WordFreq (Err _) ->
             ( model, Cmd.none )
 
+        Headline text ->
+            ( { model | text = text }, getWordFreqs text )
+
 
 
 -- VIEW
@@ -90,8 +94,10 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ h2 [] [ text model.text ]
-        , h2 [] [ text ("Keywords: " ++ String.join " " model.keywords) ]
+        [ h2 [] [ text "Headline" ]
+        , input [ type_ "text", placeholder "News Headline", onInput Headline, style [ ( "width", "600px" ) ] ] []
+        , h2 [] [ text "Keywords: " ]
+        , p [] [ text (String.join " " model.keywords) ]
         , button [ onClick MorePlease ] [ text "Show Gifs!" ]
         , renderGifs model.gifUrls
         ]
