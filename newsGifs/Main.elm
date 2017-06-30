@@ -31,7 +31,7 @@ type alias Model =
 init : String -> ( Model, Cmd Msg )
 init text =
     ( Model text [] []
-    , getRandomGifs keywords
+    , getWordFreqs text
     )
 
 
@@ -42,7 +42,7 @@ init text =
 type Msg
     = MorePlease
     | NewGif (Result Http.Error String)
-    | WordFreq (Result Http.Error ( String, Float ))
+    | WordFreq (Result Http.Error WordMetadata)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -61,8 +61,8 @@ update msg model =
         NewGif (Err _) ->
             ( model, Cmd.none )
 
-        WordFreq (Ok ( word, freq )) ->
-            ( model, Cmd.none )
+        WordFreq (Ok { word, freq }) ->
+            ( { model | keywords = model.keywords ++ [ word ] }, Cmd.none )
 
         WordFreq (Err _) ->
             ( model, Cmd.none )
@@ -132,6 +132,15 @@ decodeGifUrl =
     Decode.at [ "data", "fixed_height_downsampled_url" ] Decode.string
 
 
+getWordFreqs : String -> Cmd Msg
+getWordFreqs text =
+    let
+        words =
+            String.split " " text
+    in
+        Cmd.batch (List.map getWordFreq words)
+
+
 getWordFreq : String -> Cmd Msg
 getWordFreq word =
     let
@@ -141,11 +150,15 @@ getWordFreq word =
         Http.send WordFreq (Http.get url decodeWordFreqUrl)
 
 
-decodeWordFreqUrl : Decode.Decoder String
+type alias WordMetadata =
+    { word : String, freq : String }
+
+
+decodeWordFreqUrl : Decode.Decoder WordMetadata
 decodeWordFreqUrl =
-    ( Decode.index 0 (Decode.field "word" Decode.string)
-    , Decode.index 0 (Decode.field "tags" (Decode.index 0 (Decode.field Decode.string)))
-    )
+    Decode.map2 WordMetadata
+        (Decode.index 0 (Decode.field "word" Decode.string))
+        (Decode.index 0 (Decode.field "tags" (Decode.index 0 Decode.string)))
 
 
 isFrequent : String -> Bool
