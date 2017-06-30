@@ -10,7 +10,7 @@ import Json.Decode as Decode
 main : Program Never Model Msg
 main =
     Html.program
-        { init = init "Sinkhole swallows car in St Louis"
+        { init = init "Germany votes for big social media fines"
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -62,7 +62,22 @@ update msg model =
             ( model, Cmd.none )
 
         WordFreq (Ok { word, freq }) ->
-            ( { model | keywords = model.keywords ++ [ word ] }, Cmd.none )
+            ( { model
+                | text =
+                    if word == (Debug.log "Word: " word) then
+                        model.text
+                    else
+                        model.text
+                , keywords =
+                    model.keywords
+                        ++ (if (isFrequent (Debug.log "Freq: " freq)) then
+                                [ Debug.log "Word: " word ]
+                            else
+                                []
+                           )
+              }
+            , Cmd.none
+            )
 
         WordFreq (Err _) ->
             ( model, Cmd.none )
@@ -75,8 +90,9 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ h2 [] [ text (String.join " " model.keywords) ]
-        , button [ onClick MorePlease ] [ text "More Please!" ]
+        [ h2 [] [ text model.text ]
+        , h2 [] [ text ("Keywords: " ++ String.join " " model.keywords) ]
+        , button [ onClick MorePlease ] [ text "Show Gifs!" ]
         , renderGifs model.gifUrls
         ]
 
@@ -162,5 +178,12 @@ decodeWordFreqUrl =
 
 
 isFrequent : String -> Bool
-isFrequent word =
-    True
+isFrequent freqStr =
+    let
+        threshold =
+            150
+
+        freq =
+            Result.withDefault threshold (String.toFloat (String.dropLeft 2 freqStr))
+    in
+        (Debug.log "Parsed freq: " freq) < threshold
